@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     
     <title>Генератор никнеймов | Премиум за Stars</title>
-    <meta name="description" content="Генератор никнеймов. 10 бесплатных генераций в день. Премиум за Telegram Stars: неограниченно и массовая генерация!">
+    <meta name="description" content="Генератор никнеймов. 10 бесплатных генераций в день. Премиум за Telegram Stars">
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -126,7 +126,6 @@
             margin: 10px 0;
         }
         
-        /* ПРЕМИУМ СТИЛИ */
         .premium-section {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 20px;
@@ -173,9 +172,7 @@
             max-width: 280px;
         }
         
-        .premium-btn:active {
-            transform: scale(0.98);
-        }
+        .premium-btn:active { transform: scale(0.98); }
         
         .daily-counter {
             background: rgba(0, 0, 0, 0.3);
@@ -352,7 +349,6 @@
             <span id="currentLangDisplay">Русский</span>
         </div>
         
-        <!-- ПРЕМИУМ БЛОК -->
         <div class="premium-section">
             <div class="premium-title">
                 💎 Премиум доступ
@@ -393,38 +389,76 @@
         </div>
     </div>
 
-    <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <script>
         // ==================================================
-        // 1. TELEGRAM INIT
+        // 1. TELEGRAM INIT - ИСПРАВЛЕННЫЙ ДЕТЕКТОР
         // ==================================================
         let tg = null;
         let isTelegramWebApp = false;
         
-        // Ждём загрузки Telegram SDK
-        function initTelegram() {
-            try {
+        // ПРОВЕРЯЕМ, ЧТО МЫ В TELEGRAM
+        function checkTelegram() {
+            // Способ 1: проверяем через Telegram WebApp объект
+            if (window.Telegram && window.Telegram.WebApp) {
+                tg = window.Telegram.WebApp;
+                isTelegramWebApp = true;
+                console.log('✅ Telegram WebApp найден!');
+                return true;
+            }
+            
+            // Способ 2: проверяем URL параметры
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('tgWebAppData') || urlParams.has('tgWebAppVersion')) {
+                console.log('✅ Обнаружены параметры Telegram в URL');
+                // Пробуем получить WebApp снова
                 if (window.Telegram && window.Telegram.WebApp) {
                     tg = window.Telegram.WebApp;
-                    tg.ready();
-                    tg.expand();
-                    tg.setHeaderColor('#14162b');
                     isTelegramWebApp = true;
-                    console.log('✅ Telegram WebApp инициализирован');
-                    console.log('User ID:', tg.initDataUnsafe?.user?.id);
                     return true;
                 }
-            } catch(e) {
-                console.log('Telegram init error:', e);
             }
+            
+            // Способ 3: проверяем наличие initData в sessionStorage от Telegram
+            if (sessionStorage.getItem('telegram_init_data')) {
+                console.log('✅ Найдены данные Telegram в sessionStorage');
+                if (window.Telegram && window.Telegram.WebApp) {
+                    tg = window.Telegram.WebApp;
+                    isTelegramWebApp = true;
+                    return true;
+                }
+            }
+            
             console.log('⚠️ Не в Telegram WebApp');
             return false;
         }
         
+        // ИНИЦИАЛИЗАЦИЯ
+        function initTelegram() {
+            if (checkTelegram() && tg) {
+                try {
+                    tg.ready();
+                    tg.expand();
+                    tg.setHeaderColor('#14162b');
+                    console.log('✅ Telegram WebApp инициализирован полностью');
+                    console.log('User ID:', tg.initDataUnsafe?.user?.id);
+                    console.log('User name:', tg.initDataUnsafe?.user?.first_name);
+                    
+                    // Показываем приветствие
+                    const userName = tg.initDataUnsafe?.user?.first_name;
+                    if (userName) {
+                        console.log(`👋 Привет, ${userName}!`);
+                    }
+                } catch(e) {
+                    console.error('Ошибка инициализации Telegram:', e);
+                    isTelegramWebApp = false;
+                }
+            }
+        }
+        
         function showMessage(title, message) {
-            if (tg && tg.showPopup) {
+            if (isTelegramWebApp && tg && tg.showPopup) {
                 tg.showPopup({ title: title, message: message, buttons: [{ type: 'ok' }] });
             } else {
                 alert(message);
@@ -432,40 +466,40 @@
         }
         
         function vibrate() {
-            if (tg && tg.HapticFeedback) {
+            if (isTelegramWebApp && tg && tg.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('light');
             }
         }
         
         // ==================================================
-        // 2. СЛОВАРИ ДЛЯ ГЕНЕРАЦИИ
+        // 2. СЛОВАРИ
         // ==================================================
         const dictionaries = {
             ru: { 
-                prefixes: ["Ночной","Теневой","Ледяной","Огненный","Дикий","Тихий","Быстрый","Тёмный","Солнечный","Звёздный","Морозный","Ветреный"], 
-                roots: ["Феникс","Волк","Сокол","Тигр","Призрак","Дракон","Ястреб","Пантера","Рыцарь","Клинок","Ворон","Лис"], 
-                suffixes: ["","ер","ор","ус","ис","ик","ак","арь"],
-                adjectives: ["Безумный","Быстрый","Храбрый","Тёмный","Светлый","Дикий","Крутой","Эпичный","Могучий","Смелый"], 
-                nouns: ["Игрок","Воин","Охотник","Бегун","Боец","Маг","Вор","Паладин","Друид","Шаман"] 
+                prefixes: ["Ночной","Теневой","Ледяной","Огненный","Дикий","Тихий","Быстрый","Тёмный","Солнечный","Звёздный"], 
+                roots: ["Феникс","Волк","Сокол","Тигр","Призрак","Дракон","Ястреб","Пантера","Рыцарь","Клинок"], 
+                suffixes: ["","ер","ор","ус","ис","ик","ак"],
+                adjectives: ["Безумный","Быстрый","Храбрый","Тёмный","Светлый","Дикий","Крутой","Эпичный"], 
+                nouns: ["Игрок","Воин","Охотник","Бегун","Боец","Маг","Вор"] 
             },
             en: { 
-                prefixes: ["Night","Shadow","Frost","Fire","Wild","Silent","Swift","Dark","Solar","Star","Storm","Crimson"], 
-                roots: ["Phoenix","Wolf","Falcon","Tiger","Ghost","Dragon","Hawk","Panther","Knight","Blade","Raven","Fox"], 
-                suffixes: ["","er","or","ix","us","is","on","ian"],
-                adjectives: ["Crazy","Fast","Brave","Dark","Light","Wild","Cool","Epic","Mighty","Bold"], 
-                nouns: ["Player","Warrior","Hunter","Runner","Fighter","Mage","Rogue","Paladin","Druid","Shaman"] 
+                prefixes: ["Night","Shadow","Frost","Fire","Wild","Silent","Swift","Dark","Solar","Star"], 
+                roots: ["Phoenix","Wolf","Falcon","Tiger","Ghost","Dragon","Hawk","Panther","Knight","Blade"], 
+                suffixes: ["","er","or","ix","us","is","on"],
+                adjectives: ["Crazy","Fast","Brave","Dark","Light","Wild","Cool","Epic"], 
+                nouns: ["Player","Warrior","Hunter","Runner","Fighter","Mage","Rogue"] 
             },
             uk: { 
-                prefixes: ["Нічний","Тіньовий","Льодяний","Вогняний","Дикий","Тихий","Швидкий","Темний","Сонячний","Зоряний","Морозний","Вітряний"], 
-                roots: ["Фенікс","Вовк","Сокіл","Тигр","Привид","Дракон","Яструб","Пантера","Лицар","Клинок","Ворон","Лис"], 
-                suffixes: ["","ер","ор","ус","ис","ик","ак","ар"],
-                adjectives: ["Божевільний","Швидкий","Хоробрий","Темний","Світлий","Дикий","Крутий","Епічний","Могутній","Сміливий"], 
-                nouns: ["Гравець","Воїн","Мисливець","Бігун","Боєць","Маг","Злодій","Паладин","Друїд","Шаман"] 
+                prefixes: ["Нічний","Тіньовий","Льодяний","Вогняний","Дикий","Тихий","Швидкий","Темний","Сонячний","Зоряний"], 
+                roots: ["Фенікс","Вовк","Сокіл","Тигр","Привид","Дракон","Яструб","Пантера","Лицар","Клинок"], 
+                suffixes: ["","ер","ор","ус","ис","ик","ак"],
+                adjectives: ["Божевільний","Швидкий","Хоробрий","Темний","Світлий","Дикий","Крутий","Епічний"], 
+                nouns: ["Гравець","Воїн","Мисливець","Бігун","Боєць","Маг","Злодій"] 
             }
         };
         
         // ==================================================
-        // 3. ПЕРЕВОДЫ UI
+        // 3. ПЕРЕВОДЫ
         // ==================================================
         const translations = {
             ru: { 
@@ -647,11 +681,11 @@
         // ==================================================
         // 6. ПРОМОКОДЫ
         // ==================================================
-        // ⚠️ ЗАМЕНИТЕ НА СВОЙ TELEGRAM ID (узнать у @userinfobot)
+        // ⚠️ ЗАМЕНИТЕ НА СВОЙ TELEGRAM ID
         const ADMIN_IDS = [536413778];
         
         function getCurrentUserId() {
-            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            if (isTelegramWebApp && tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 return tg.initDataUnsafe.user.id;
             }
             const savedId = localStorage.getItem('user_id_for_admin');
@@ -754,7 +788,7 @@
         }
         
         // ==================================================
-        // 7. ОБНОВЛЕНИЕ UI (ГЛАВНОЕ - КНОПКА ПРЕМИУМА)
+        // 7. ОБНОВЛЕНИЕ UI
         // ==================================================
         function updateUILanguage() {
             const t = translations[currentLang];
@@ -807,47 +841,53 @@
                 }
                 if (bulkBlock) bulkBlock.style.display = 'none';
                 
-                // === ГЛАВНОЕ: ОБРАБОТЧИК КНОПКИ ПРЕМИУМА ===
+                // === ГЛАВНОЕ: КНОПКА ПРЕМИУМА С ПРОВЕРКОЙ TELEGRAM ===
                 setTimeout(() => {
                     const buyBtn = document.getElementById('buyPremiumBtn');
                     if (buyBtn) {
-                        console.log('✅ Кнопка премиума найдена, добавляю обработчик');
-                        // Убираем старые обработчики
+                        console.log('✅ Кнопка премиума найдена');
+                        console.log('Telegram режим:', isTelegramWebApp);
+                        
                         const newBuyBtn = buyBtn.cloneNode(true);
                         buyBtn.parentNode.replaceChild(newBuyBtn, buyBtn);
                         
                         newBuyBtn.addEventListener('click', function(e) {
                             e.preventDefault();
                             console.log('🔘 Кнопка премиума нажата!');
+                            console.log('isTelegramWebApp =', isTelegramWebApp);
+                            console.log('tg =', tg);
                             
                             if (isTelegramWebApp && tg) {
                                 // Отправляем инвойс для оплаты Telegram Stars
                                 try {
-                                    tg.sendInvoice({
+                                    const invoice = {
                                         title: 'Премиум доступ к генератору никнеймов',
                                         description: 'Неограниченная генерация + массовая генерация до 100 ников на 30 дней',
                                         currency: 'XTR',
-                                        prices: [{ label: 'Премиум доступ', amount: 300 }],
+                                        prices: [{ label: 'Премиум доступ 30 дней', amount: 300 }],
                                         payload: JSON.stringify({
                                             product: 'premium',
                                             days: 30,
                                             userId: getCurrentUserId()
                                         })
-                                    });
-                                    console.log('💳 Инвойс отправлен');
+                                    };
+                                    console.log('Отправляем инвойс:', invoice);
+                                    tg.sendInvoice(invoice);
+                                    console.log('💳 Инвойс отправлен успешно');
                                 } catch(err) {
                                     console.error('Ошибка отправки инвойса:', err);
-                                    showMessage('❌ Ошибка', 'Не удалось инициировать платеж. Попробуйте позже.');
+                                    showMessage('❌ Ошибка', 'Не удалось инициировать платеж: ' + err.message);
                                 }
                             } else {
                                 // Для тестирования вне Telegram
-                                showMessage('💎 Тестовый режим', 'В обычном браузере оплата недоступна. Используйте промокод для теста!');
+                                console.log('Не в Telegram, показываем тестовое сообщение');
+                                showMessage('💎 Тестовый режим', 'В обычном браузере оплата через Telegram Stars недоступна. Для теста используйте промокод из админ-панели!');
                             }
                         });
                     } else {
                         console.log('❌ Кнопка премиума НЕ найдена');
                     }
-                }, 50);
+                }, 100);
             }
             
             // Админ панель
@@ -894,22 +934,30 @@
         }
         
         // ==================================================
-        // 8. ОБРАБОТЧИК ОПЛАТЫ TELEGRAM STARS
+        // 8. ОБРАБОТЧИК ОПЛАТЫ
         // ==================================================
-        if (window.Telegram && window.Telegram.WebApp) {
-            const tempTg = window.Telegram.WebApp;
-            tempTg.onEvent('invoiceClosed', (data) => {
-                console.log('💳 invoiceClosed event:', data);
-                if (data.status === 'paid') {
-                    console.log('✅ Платеж успешен! Активируем премиум');
-                    activatePremium(30);
-                } else if (data.status === 'failed') {
-                    console.log('❌ Платеж не удался');
-                    showMessage('❌ Ошибка', 'Платеж не прошёл. Попробуйте позже.');
-                } else if (data.status === 'pending') {
-                    console.log('⏳ Платеж в обработке');
-                }
-            });
+        function setupPaymentHandler() {
+            if (!isTelegramWebApp || !tg) return;
+            
+            try {
+                tg.onEvent('invoiceClosed', (data) => {
+                    console.log('💳 invoiceClosed event:', data);
+                    if (data.status === 'paid') {
+                        console.log('✅ Платеж успешен! Активируем премиум');
+                        activatePremium(30);
+                    } else if (data.status === 'failed') {
+                        console.log('❌ Платеж не удался');
+                        showMessage('❌ Ошибка', 'Платеж не прошёл. Попробуйте позже.');
+                    } else if (data.status === 'pending') {
+                        console.log('⏳ Платеж в обработке');
+                    } else {
+                        console.log('Статус платежа:', data.status);
+                    }
+                });
+                console.log('✅ Обработчик платежей установлен');
+            } catch(e) {
+                console.error('Ошибка установки обработчика:', e);
+            }
         }
         
         // ==================================================
@@ -918,8 +966,11 @@
         document.addEventListener("DOMContentLoaded", () => {
             console.log('🚀 Загрузка страницы...');
             
-            // Инициализируем Telegram
+            // Инициализируем Telegram (ВАЖНО: ДО ВСЕГО ОСТАЛЬНОГО)
             initTelegram();
+            
+            // Устанавливаем обработчик платежей
+            setupPaymentHandler();
             
             // Загружаем язык
             const savedLang = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
@@ -979,13 +1030,16 @@
                 if (hasPremium() && localStorage.getItem(STORAGE_KEYS.PREMIUM_EXPIRES) < Date.now()) {
                     localStorage.removeItem(STORAGE_KEYS.PREMIUM_EXPIRES);
                     updatePremiumUI();
-                    location.reload();
                 }
             }, 60000);
             
             console.log('✅ Готово!');
             console.log('Telegram режим:', isTelegramWebApp);
-            console.log('Admin ID в коде:', ADMIN_IDS[0]);
+            if (isTelegramWebApp && tg) {
+                console.log('Telegram WebApp доступен для платежей');
+            } else {
+                console.log('⚠️ Для оплаты нужно открыть бота в Telegram');
+            }
         });
     </script>
 </body>
