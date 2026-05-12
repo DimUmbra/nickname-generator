@@ -6,8 +6,8 @@
     
     <meta name="google-site-verification" content="FvVp5cf249oYbB4WGGm5E920pSB3ICfFlRu-3k-DSX4" />
     
-    <title>Генератор никнеймов | Премиум доступ за Stars</title>
-    <meta name="description" content="Бесплатный генератор никнеймов. 10 генераций в день бесплатно. Премиум за Telegram Stars: неограниченно и массовая генерация!">
+    <title>Генератор никнеймов | Премиум доступ</title>
+    <meta name="description" content="Бесплатный генератор никнеймов. 10 генераций в день бесплатно. Премиум: неограниченно и массовая генерация!">
     <meta name="keywords" content="генератор ников, никнейм, премиум, telegram stars">
     <meta name="author" content="DimUmbra">
     <meta name="robots" content="index, follow">
@@ -15,16 +15,11 @@
     <meta property="og:title" content="Генератор никнеймов">
     <meta property="og:description" content="Создай уникальный ник для игр!">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://dimumbra.github.io/nickname-generator/">
     
     <link rel="canonical" href="https://dimumbra.github.io/nickname-generator/">
     
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
@@ -116,9 +111,7 @@
             transform: scale(1.02);
         }
         
-        #copyBtn {
-            background: #4CAF50;
-        }
+        #copyBtn { background: #4CAF50; }
         
         .info {
             text-align: center;
@@ -289,13 +282,8 @@
             margin: 0;
         }
         
-        .admin-btn.danger {
-            background: #f44336;
-        }
-        
-        .admin-btn.warning {
-            background: #ff9800;
-        }
+        .admin-btn.danger { background: #f44336; }
+        .admin-btn.warning { background: #ff9800; }
         
         .footer-links {
             margin-top: 25px;
@@ -311,9 +299,7 @@
             font-size: 12px;
         }
         
-        .footer-links a:hover {
-            color: #f5a623;
-        }
+        .footer-links a:hover { color: #f5a623; }
         
         .footer-info {
             margin-top: 15px;
@@ -360,7 +346,6 @@
             <span id="currentLangDisplay">Русский</span>
         </div>
         
-        <!-- ПРЕМИУМ БЛОК -->
         <div class="premium-section">
             <div class="premium-title">
                 💎 Премиум доступ
@@ -371,12 +356,11 @@
             </div>
             <div id="premiumContent"></div>
             
-            <!-- Блок промокода (исправленный) -->
             <div class="promo-section">
                 <details>
                     <summary>🎫 Есть промокод? Нажмите, чтобы ввести</summary>
                     <div class="promo-input-group">
-                        <input type="text" id="promoCodeInput" placeholder="Например: TEST-ABC123" autocomplete="off">
+                        <input type="text" id="promoCodeInput" placeholder="Например: DAY-ABC123" autocomplete="off">
                         <button id="activatePromoBtn">🎁 Активировать</button>
                     </div>
                     <div style="font-size: 11px; margin-top: 8px; color: rgba(255,255,255,0.7);">
@@ -386,7 +370,6 @@
             </div>
         </div>
 
-        <!-- Блок массовой генерации -->
         <div id="bulkGenerateBlock" style="display: none;" class="bulk-generate">
             <label>🎲 Сгенерировать сразу:</label>
             <input type="number" id="bulkCount" min="1" max="100" value="10" class="bulk-input">
@@ -406,31 +389,40 @@
         </div>
     </div>
 
-    <!-- Telegram Web App SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
     <script>
         // ==================================================
-        // 1. TELEGRAM INIT
+        // 1. TELEGRAM INIT (с обработкой ошибок)
         // ==================================================
-        let tg;
+        let tg = null;
+        let isTelegramWebApp = false;
+        
         try {
-            tg = window.Telegram.WebApp;
-            tg.ready();
-            tg.expand();
-            tg.setHeaderColor('#14162b');
+            if (window.Telegram && window.Telegram.WebApp) {
+                tg = window.Telegram.WebApp;
+                tg.ready();
+                tg.expand();
+                tg.setHeaderColor('#14162b');
+                isTelegramWebApp = true;
+                console.log('✅ Telegram WebApp инициализирован');
+            } else {
+                console.log('⚠️ Не в Telegram WebApp, работаем как обычный сайт');
+            }
         } catch(e) {
-            console.log('Не в Telegram');
-            tg = null;
+            console.log('❌ Ошибка инициализации Telegram:', e);
         }
         
         function vibrate() {
-            if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+            if (tg && tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('medium');
+            }
         }
         
         function showMessage(title, message) {
-            if (tg) tg.showPopup({ title: title, message: message, buttons: [{ type: 'ok' }] });
-            else alert(message);
+            if (tg && tg.showPopup) {
+                tg.showPopup({ title: title, message: message, buttons: [{ type: 'ok' }] });
+            } else {
+                alert(message);
+            }
         }
         
         // ==================================================
@@ -593,15 +585,35 @@
         }
         
         // ==================================================
-        // 6. ПРОМОКОДЫ (С РАЗНЫМИ СРОКАМИ)
+        // 6. ПРОМОКОДЫ
         // ==================================================
         
         // ⚠️ ЗАМЕНИТЕ НА СВОЙ TELEGRAM ID (узнать у @userinfobot)
+        // Если не знаете ID, оставьте как есть - админ-панель не покажется
         const ADMIN_IDS = [536413778];
         
+        function getCurrentUserId() {
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                return tg.initDataUnsafe.user.id;
+            }
+            // Для обычного сайта - проверяем localStorage
+            const savedId = localStorage.getItem('user_id_for_admin');
+            return savedId ? parseInt(savedId) : null;
+        }
+        
         function isAdmin() {
-            const userId = tg?.initDataUnsafe?.user?.id;
+            const userId = getCurrentUserId();
             return ADMIN_IDS.includes(userId);
+        }
+        
+        // Функция для установки ID админа на обычном сайте (для тестирования)
+        function setAdminMode() {
+            const userId = prompt('Введите ваш Telegram ID для входа в админ-панель:');
+            if (userId && parseInt(userId)) {
+                localStorage.setItem('user_id_for_admin', userId);
+                showMessage('✅ Режим админа', 'Перезагрузите страницу для применения');
+                location.reload();
+            }
         }
         
         function generatePromoCode(days) {
@@ -618,7 +630,7 @@
                 used: false, 
                 days: days,
                 created: Date.now(), 
-                expires: Date.now() + 30 * 24 * 60 * 60 * 1000  // сам код живет 30 дней
+                expires: Date.now() + 30 * 24 * 60 * 60 * 1000
             };
             localStorage.setItem(STORAGE_KEYS.PROMO_CODES, JSON.stringify(promoList));
             return code;
@@ -654,28 +666,19 @@
             
             const days = getPromoCodeDays(code);
             
-            // Активируем премиум на указанное количество дней
             localStorage.setItem(STORAGE_KEYS.PREMIUM_EXPIRES, Date.now() + days * 24 * 60 * 60 * 1000);
             
-            // Отмечаем код как использованный
             const promoList = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROMO_CODES) || '{}');
             promoList[code].used = true;
-            promoList[code].usedBy = tg?.initDataUnsafe?.user?.id || 'anonymous';
+            promoList[code].usedBy = getCurrentUserId() || 'anonymous';
             promoList[code].usedAt = Date.now();
             localStorage.setItem(STORAGE_KEYS.PROMO_CODES, JSON.stringify(promoList));
             
             updatePremiumUI();
-            showMessage('🎉 Премиум активирован!', `Премиум-доступ активирован на ${days} ${getDaysWord(days)} по промокоду!`);
+            showMessage('🎉 Премиум активирован!', `Премиум-доступ активирован на ${days} дней по промокоду!`);
             return true;
         }
         
-        function getDaysWord(days) {
-            if (days === 1) return 'день';
-            if (days >= 2 && days <= 4) return 'дня';
-            return 'дней';
-        }
-        
-        // СОЗДАНИЕ ПРОМОКОДОВ (админ)
         function createPromoCode(days, daysText) {
             if (!isAdmin()) {
                 showMessage('⛔ Доступ запрещен', 'Только владелец бота может создавать промокоды!');
@@ -755,8 +758,17 @@
                 const buyBtn = document.getElementById('buyPremiumBtn');
                 if (buyBtn) {
                     buyBtn.addEventListener('click', () => {
-                        if (tg) tg.sendInvoice({ title: 'Премиум доступ к генератору никнеймов', description: 'Неограниченная генерация + массовая генерация до 100 ников', currency: 'XTR', prices: [{ label: 'Премиум доступ', amount: 300 }], payload: 'premium_nickname_generator' });
-                        else activatePremium(30);
+                        if (isTelegramWebApp && tg) {
+                            tg.sendInvoice({ 
+                                title: 'Премиум доступ к генератору никнеймов', 
+                                description: 'Неограниченная генерация + массовая генерация до 100 ников', 
+                                currency: 'XTR', 
+                                prices: [{ label: 'Премиум доступ', amount: 300 }], 
+                                payload: 'premium_nickname_generator' 
+                            });
+                        } else {
+                            showMessage('💎 Премиум', 'В обычном сайте оплата через Telegram Stars недоступна. Используйте промокод для теста!');
+                        }
                     });
                 }
             }
@@ -813,9 +825,11 @@
         }
         
         // ==================================================
-        // 9. ЗАПУСК
+        // 9. ЗАПУСК (ВСЕ ОБРАБОТЧИКИ)
         // ==================================================
         document.addEventListener("DOMContentLoaded", () => {
+            console.log('🚀 Страница загружена, инициализация...');
+            
             const savedLang = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
             if (savedLang && translations[savedLang]) currentLang = savedLang;
             updateUILanguage();
@@ -823,16 +837,22 @@
             
             document.getElementById("generateBtn").addEventListener("click", updateNickname);
             document.getElementById("copyBtn").addEventListener("click", copyToClipboard);
-            document.getElementById("bulkGenerateBtn")?.addEventListener("click", bulkGenerate);
             
-            // ИСПРАВЛЕННЫЙ ОБРАБОТЧИК ПРОМОКОДА
+            const bulkBtn = document.getElementById("bulkGenerateBtn");
+            if (bulkBtn) bulkBtn.addEventListener("click", bulkGenerate);
+            
+            // === ГЛАВНОЕ: ИСПРАВЛЕННЫЙ ОБРАБОТЧИК ПРОМОКОДА ===
             const activateBtn = document.getElementById('activatePromoBtn');
             const promoInput = document.getElementById('promoCodeInput');
             
             if (activateBtn) {
-                activateBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
+                console.log('✅ Кнопка активации найдена, добавляю обработчик');
+                activateBtn.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    console.log('🔘 Кнопка активации нажата!');
                     const code = promoInput ? promoInput.value : '';
+                    console.log('Введённый код:', code);
                     if (code && code.trim()) {
                         activatePromoCode(code);
                         if (promoInput) promoInput.value = '';
@@ -840,12 +860,15 @@
                         showMessage('⚠️ Ошибка', 'Введите промокод!');
                     }
                 });
+            } else {
+                console.log('❌ Кнопка активации НЕ найдена!');
             }
             
             if (promoInput) {
                 promoInput.addEventListener('keypress', function(e) {
                     if (e.key === 'Enter') {
                         e.preventDefault();
+                        console.log('↵ Enter нажат в поле промокода');
                         const code = promoInput.value;
                         if (code && code.trim()) {
                             activatePromoCode(code);
@@ -871,9 +894,10 @@
                 }
             }, 60000);
             
-            console.log('✅ Генератор запущен!');
-            console.log('Админ ID:', ADMIN_IDS[0]);
-            console.log('Ваш ID:', tg?.initDataUnsafe?.user?.id);
+            console.log('✅ Генератор полностью запущен!');
+            console.log('Telegram режим:', isTelegramWebApp);
+            console.log('Admin ID в коде:', ADMIN_IDS[0]);
+            console.log('Ваш текущий ID:', getCurrentUserId());
         });
     </script>
 </body>
