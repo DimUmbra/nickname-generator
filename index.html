@@ -52,6 +52,7 @@
             gap: 10px;
             justify-content: center;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         
         .lang-btn {
@@ -133,7 +134,6 @@
             margin: 10px 0;
         }
         
-        /* ПРЕМИУМ СТИЛИ */
         .premium-section {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 20px;
@@ -221,14 +221,21 @@
             text-align: left;
         }
         
-        /* Промокод стили */
+        .promo-section {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+        
         .promo-section details {
             cursor: pointer;
         }
         
         .promo-section summary {
             color: #f5a623;
-            font-size: 12px;
+            font-size: 13px;
+            font-weight: bold;
         }
         
         .promo-input-group {
@@ -240,37 +247,54 @@
         
         .promo-input-group input {
             flex: 1;
-            padding: 8px;
+            padding: 10px;
             border-radius: 8px;
             border: none;
             font-size: 14px;
+            min-width: 150px;
         }
         
         .promo-input-group button {
-            padding: 8px 15px;
+            padding: 10px 20px;
             margin: 0;
+            background: #4CAF50;
         }
         
-        /* Админ панель */
         .admin-panel {
             margin-top: 15px;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.5);
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.6);
             border-radius: 10px;
             border: 1px solid #f5a623;
         }
         
         .admin-title {
             color: #f5a623;
-            font-size: 12px;
-            margin-bottom: 8px;
+            font-size: 13px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .admin-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
         }
         
         .admin-btn {
             background: #2196F3;
-            padding: 5px 10px;
+            padding: 6px 12px;
             font-size: 12px;
-            margin: 2px;
+            margin: 0;
+        }
+        
+        .admin-btn.danger {
+            background: #f44336;
+        }
+        
+        .admin-btn.warning {
+            background: #ff9800;
         }
         
         .footer-links {
@@ -296,6 +320,12 @@
             font-size: 10px;
             color: #555;
             text-align: center;
+        }
+        
+        @media (max-width: 500px) {
+            .container { padding: 20px; }
+            .nickname-box { font-size: 18px; }
+            button { padding: 8px 16px; font-size: 14px; }
         }
     </style>
 </head>
@@ -341,19 +371,22 @@
             </div>
             <div id="premiumContent"></div>
             
-            <!-- Блок промокода -->
-            <div class="promo-section" style="margin-top: 15px;">
+            <!-- Блок промокода (исправленный) -->
+            <div class="promo-section">
                 <details>
-                    <summary>🎫 Есть промокод? Введите здесь</summary>
+                    <summary>🎫 Есть промокод? Нажмите, чтобы ввести</summary>
                     <div class="promo-input-group">
-                        <input type="text" id="promoCodeInput" placeholder="Введите промокод (например: TEST-ABC123)">
-                        <button id="activatePromoBtn" style="background: #4CAF50;">Активировать</button>
+                        <input type="text" id="promoCodeInput" placeholder="Например: TEST-ABC123" autocomplete="off">
+                        <button id="activatePromoBtn">🎁 Активировать</button>
+                    </div>
+                    <div style="font-size: 11px; margin-top: 8px; color: rgba(255,255,255,0.7);">
+                        💡 Промокоды дают временный премиум-доступ
                     </div>
                 </details>
             </div>
         </div>
 
-        <!-- Блок массовой генерации (только премиум) -->
+        <!-- Блок массовой генерации -->
         <div id="bulkGenerateBlock" style="display: none;" class="bulk-generate">
             <label>🎲 Сгенерировать сразу:</label>
             <input type="number" id="bulkCount" min="1" max="100" value="10" class="bulk-input">
@@ -387,6 +420,7 @@
             tg.expand();
             tg.setHeaderColor('#14162b');
         } catch(e) {
+            console.log('Не в Telegram');
             tg = null;
         }
         
@@ -394,8 +428,13 @@
             if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
         }
         
+        function showMessage(title, message) {
+            if (tg) tg.showPopup({ title: title, message: message, buttons: [{ type: 'ok' }] });
+            else alert(message);
+        }
+        
         // ==================================================
-        // 2. СЛОВАРИ ДЛЯ ГЕНЕРАЦИИ
+        // 2. СЛОВАРИ
         // ==================================================
         const dictionaries = {
             ru: { prefixes: ["Ночной","Теневой","Ледяной","Огненный","Дикий","Тихий","Быстрый","Тёмный","Солнечный","Звёздный"], roots: ["Феникс","Волк","Сокол","Тигр","Призрак","Дракон","Ястреб","Пантера","Рыцарь","Клинок"], suffixes: ["","ер","ор","ус","ис","ик","ак"], adjectives: ["Безумный","Быстрый","Храбрый","Тёмный","Светлый","Дикий","Крутой","Эпичный"], nouns: ["Игрок","Воин","Охотник","Бегун","Боец","Маг","Вор"] },
@@ -415,11 +454,22 @@
         // ==================================================
         // 4. ПРЕМИУМ СИСТЕМА
         // ==================================================
-        const STORAGE_KEYS = { PREMIUM_EXPIRES: 'premium_expires', DAILY_GENERATIONS: 'daily_generations', LAST_GENERATION_DATE: 'last_generation_date', LANGUAGE: 'preferredLanguage', PROMO_CODES: 'promo_codes' };
+        const STORAGE_KEYS = { 
+            PREMIUM_EXPIRES: 'premium_expires', 
+            DAILY_GENERATIONS: 'daily_generations', 
+            LAST_GENERATION_DATE: 'last_generation_date', 
+            LANGUAGE: 'preferredLanguage', 
+            PROMO_CODES: 'promo_codes' 
+        };
         
         function hasPremium() {
             const expires = localStorage.getItem(STORAGE_KEYS.PREMIUM_EXPIRES);
             return expires ? Date.now() < parseInt(expires) : false;
+        }
+        
+        function getPremiumExpiryDate() {
+            const expires = localStorage.getItem(STORAGE_KEYS.PREMIUM_EXPIRES);
+            return expires ? new Date(parseInt(expires)) : null;
         }
         
         function getRemainingFreeGenerations() {
@@ -448,11 +498,11 @@
             return true;
         }
         
-        function activatePremium() {
-            localStorage.setItem(STORAGE_KEYS.PREMIUM_EXPIRES, Date.now() + 30 * 24 * 60 * 60 * 1000);
+        function activatePremium(days = 30) {
+            localStorage.setItem(STORAGE_KEYS.PREMIUM_EXPIRES, Date.now() + days * 24 * 60 * 60 * 1000);
             updatePremiumUI();
-            if (tg) tg.showPopup({ title: '🎉 Поздравляем!', message: 'Премиум-доступ активирован на 30 дней!', buttons: [{ type: 'ok' }] });
-            else alert('Премиум активирован на 30 дней!');
+            showMessage('🎉 Премиум активирован!', `Премиум-доступ активирован на ${days} дней!`);
+            return true;
         }
         
         // ==================================================
@@ -503,8 +553,7 @@
             vibrate();
             const remaining = getRemainingFreeGenerations();
             if (!hasPremium() && remaining <= 0) {
-                if (tg) tg.showPopup({ title: '⚠️ Лимит исчерпан', message: 'Бесплатные генерации на сегодня закончились. Купите премиум!', buttons: [{ type: 'ok' }] });
-                else alert('Лимит бесплатных генераций на сегодня исчерпан!');
+                showMessage('⚠️ Лимит исчерпан', 'Бесплатные генерации на сегодня закончились. Купите премиум или используйте промокод!');
                 return;
             }
             if (!incrementGenerationCounter()) return;
@@ -518,12 +567,11 @@
         
         function bulkGenerate() {
             if (!hasPremium()) {
-                if (tg) tg.showPopup({ title: '💎 Требуется премиум', message: 'Массовая генерация только для премиум-пользователей!', buttons: [{ type: 'ok' }] });
-                else alert('Массовая генерация доступна только с премиумом!');
+                showMessage('💎 Требуется премиум', 'Массовая генерация доступна только премиум-пользователям!');
                 return;
             }
             const count = parseInt(document.getElementById('bulkCount')?.value || '10');
-            if (count < 1 || count > 100) { alert('Количество от 1 до 100'); return; }
+            if (count < 1 || count > 100) { showMessage('Ошибка', 'Количество должно быть от 1 до 100'); return; }
             vibrate();
             const nicks = generateMultipleNicknames(count);
             const resultsDiv = document.getElementById('bulkResults');
@@ -532,8 +580,7 @@
         
         async function copyToClipboard() {
             if (!currentNickname || currentNickname.includes("Сгенерировать")) {
-                if (tg) tg.showPopup({ title: '⚠️ Ошибка', message: 'Сначала сгенерируйте ник!', buttons: [{ type: 'ok' }] });
-                else alert('Сначала сгенерируйте ник!');
+                showMessage('⚠️ Ошибка', 'Сначала сгенерируйте ник!');
                 return;
             }
             try {
@@ -542,29 +589,37 @@
                 const originalHTML = copyBtn.innerHTML;
                 copyBtn.innerHTML = "✅ Скопировано!";
                 setTimeout(() => copyBtn.innerHTML = originalHTML, 1500);
-            } catch(err) { alert('Не удалось скопировать'); }
+            } catch(err) { showMessage('Ошибка', 'Не удалось скопировать'); }
         }
         
         // ==================================================
-        // 6. ПРОМОКОДЫ
+        // 6. ПРОМОКОДЫ (С РАЗНЫМИ СРОКАМИ)
         // ==================================================
-        const ADMIN_IDS = [536413778]; // ЗАМЕНИТЕ НА СВОЙ TELEGRAM ID
+        
+        // ⚠️ ЗАМЕНИТЕ НА СВОЙ TELEGRAM ID (узнать у @userinfobot)
+        const ADMIN_IDS = [123456789];
         
         function isAdmin() {
             const userId = tg?.initDataUnsafe?.user?.id;
             return ADMIN_IDS.includes(userId);
         }
         
-        function generatePromoCode() {
+        function generatePromoCode(days) {
+            const prefix = days === 1 ? 'DAY' : (days === 7 ? 'WEEK' : 'MONTH');
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
-            let code = 'TEST-';
+            let code = prefix + '-';
             for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
             return code;
         }
         
-        function savePromoCode(code) {
+        function savePromoCode(code, days) {
             const promoList = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROMO_CODES) || '{}');
-            promoList[code] = { used: false, created: Date.now(), expires: Date.now() + 30 * 24 * 60 * 60 * 1000 };
+            promoList[code] = { 
+                used: false, 
+                days: days,
+                created: Date.now(), 
+                expires: Date.now() + 30 * 24 * 60 * 60 * 1000  // сам код живет 30 дней
+            };
             localStorage.setItem(STORAGE_KEYS.PROMO_CODES, JSON.stringify(promoList));
             return code;
         }
@@ -572,55 +627,81 @@
         function isValidPromoCode(code) {
             const promoList = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROMO_CODES) || '{}');
             const promo = promoList[code];
-            if (!promo || promo.used || Date.now() > promo.expires) return false;
+            if (!promo) return false;
+            if (promo.used) return false;
+            if (Date.now() > promo.expires) return false;
             return true;
         }
         
+        function getPromoCodeDays(code) {
+            const promoList = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROMO_CODES) || '{}');
+            const promo = promoList[code];
+            return promo ? promo.days : 0;
+        }
+        
         function activatePromoCode(code) {
-            if (!isValidPromoCode(code)) {
-                if (tg) tg.showPopup({ title: '❌ Неверный код', message: 'Промокод недействителен или уже использован!', buttons: [{ type: 'ok' }] });
-                else alert('Неверный промокод!');
+            if (!code) {
+                showMessage('⚠️ Ошибка', 'Введите промокод!');
                 return false;
             }
-            localStorage.setItem(STORAGE_KEYS.PREMIUM_EXPIRES, Date.now() + 30 * 24 * 60 * 60 * 1000);
+            
+            code = code.trim().toUpperCase();
+            
+            if (!isValidPromoCode(code)) {
+                showMessage('❌ Неверный код', 'Промокод недействителен или уже использован!');
+                return false;
+            }
+            
+            const days = getPromoCodeDays(code);
+            
+            // Активируем премиум на указанное количество дней
+            localStorage.setItem(STORAGE_KEYS.PREMIUM_EXPIRES, Date.now() + days * 24 * 60 * 60 * 1000);
+            
+            // Отмечаем код как использованный
             const promoList = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROMO_CODES) || '{}');
             promoList[code].used = true;
             promoList[code].usedBy = tg?.initDataUnsafe?.user?.id || 'anonymous';
             promoList[code].usedAt = Date.now();
             localStorage.setItem(STORAGE_KEYS.PROMO_CODES, JSON.stringify(promoList));
+            
             updatePremiumUI();
-            if (tg) tg.showPopup({ title: '🎉 Премиум активирован!', message: 'Премиум-доступ получен по промокоду на 30 дней.', buttons: [{ type: 'ok' }] });
-            else alert('Премиум активирован по промокоду!');
+            showMessage('🎉 Премиум активирован!', `Премиум-доступ активирован на ${days} ${getDaysWord(days)} по промокоду!`);
             return true;
         }
         
-        function createNewPromoCode() {
+        function getDaysWord(days) {
+            if (days === 1) return 'день';
+            if (days >= 2 && days <= 4) return 'дня';
+            return 'дней';
+        }
+        
+        // СОЗДАНИЕ ПРОМОКОДОВ (админ)
+        function createPromoCode(days, daysText) {
             if (!isAdmin()) {
-                if (tg) tg.showPopup({ title: '⛔ Доступ запрещен', message: 'Только владелец бота может создавать промокоды!', buttons: [{ type: 'ok' }] });
+                showMessage('⛔ Доступ запрещен', 'Только владелец бота может создавать промокоды!');
                 return null;
             }
-            const code = generatePromoCode();
-            savePromoCode(code);
+            const code = generatePromoCode(days);
+            savePromoCode(code, days);
             navigator.clipboard.writeText(code);
-            if (tg) tg.showPopup({ title: '✅ Промокод создан!', message: `Код: ${code}\n\nСкопирован в буфер обмена!`, buttons: [{ type: 'ok' }] });
-            else alert(`Промокод создан: ${code}`);
+            showMessage('✅ Промокод создан!', `${daysText} промокод: ${code}\n\nСкопирован в буфер обмена!`);
             return code;
         }
         
         function showPromoCodes() {
             if (!isAdmin()) {
-                if (tg) tg.showPopup({ title: '⛔ Доступ запрещен', message: 'Только владелец бота может просматривать промокоды!', buttons: [{ type: 'ok' }] });
+                showMessage('⛔ Доступ запрещен', 'Только владелец бота может просматривать промокоды!');
                 return;
             }
             const promoList = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROMO_CODES) || '{}');
             const active = [], used = [];
             for (const [code, data] of Object.entries(promoList)) {
-                if (data.used) used.push(code);
-                else if (Date.now() < data.expires) active.push(code);
+                const typeText = data.days === 1 ? '📅 1 день' : (data.days === 7 ? '📆 7 дней' : '💎 30 дней');
+                if (data.used) used.push(`${code} (${typeText})`);
+                else if (Date.now() < data.expires) active.push(`${code} (${typeText})`);
             }
             const message = `🎫 АКТИВНЫЕ (${active.length}):\n${active.join('\n') || 'нет'}\n\n✅ ИСПОЛЬЗОВАННЫЕ (${used.length}):\n${used.join('\n') || 'нет'}`;
-            if (tg) tg.showPopup({ title: '📋 Список промокодов', message: message.slice(0, 200), buttons: [{ type: 'ok' }] });
-            else alert(message);
+            showMessage('📋 Список промокодов', message.slice(0, 200));
         }
         
         // ==================================================
@@ -651,15 +732,22 @@
             const bulkBlock = document.getElementById('bulkGenerateBlock');
             
             if (isPremium) {
+                const expiryDate = getPremiumExpiryDate();
+                const daysLeft = Math.ceil((expiryDate - Date.now()) / (1000 * 60 * 60 * 24));
                 if (premiumBadge) premiumBadge.style.display = 'inline-block';
                 if (premiumContent) {
-                    premiumContent.innerHTML = `<div style="background: rgba(255,255,255,0.2); border-radius: 10px; padding: 10px;">✅ <strong>Премиум активен!</strong><br>🎲 Неограниченные генерации<br>⚡ Массовая генерация до 100 ников<br>🔥 Уникальные имена без повторов</div>`;
+                    premiumContent.innerHTML = `<div style="background: rgba(255,255,255,0.2); border-radius: 10px; padding: 10px;">
+                        ✅ <strong>Премиум активен!</strong><br>
+                        🎲 Неограниченные генерации<br>
+                        ⚡ Массовая генерация до 100 ников<br>
+                        📅 Осталось дней: <strong>${daysLeft}</strong>
+                    </div>`;
                 }
                 if (bulkBlock) bulkBlock.style.display = 'block';
             } else {
                 if (premiumBadge) premiumBadge.style.display = 'none';
                 if (premiumContent) {
-                    premiumContent.innerHTML = `<div class="daily-counter">📊 Сегодня осталось: <strong>${remaining}</strong> из 10 бесплатных генераций${remaining === 0 ? '<br>🚫 Лимит на сегодня исчерпан! Купите премиум.' : ''}</div>
+                    premiumContent.innerHTML = `<div class="daily-counter">📊 Сегодня осталось: <strong>${remaining}</strong> из 10 бесплатных генераций${remaining === 0 ? '<br>🚫 Лимит на сегодня исчерпан! Купите премиум или используйте промокод.' : ''}</div>
                         <button id="buyPremiumBtn" class="premium-btn">💎 Купить Премиум за Stars (300 ⭐)</button>
                         <div style="font-size: 11px; margin-top: 10px;">⭐ Премиум: неограниченно | массовая генерация</div>`;
                 }
@@ -668,7 +756,7 @@
                 if (buyBtn) {
                     buyBtn.addEventListener('click', () => {
                         if (tg) tg.sendInvoice({ title: 'Премиум доступ к генератору никнеймов', description: 'Неограниченная генерация + массовая генерация до 100 ников', currency: 'XTR', prices: [{ label: 'Премиум доступ', amount: 300 }], payload: 'premium_nickname_generator' });
-                        else activatePremium();
+                        else activatePremium(30);
                     });
                 }
             }
@@ -679,18 +767,27 @@
                 const adminDiv = document.createElement('div');
                 adminDiv.id = 'adminPanel';
                 adminDiv.className = 'admin-panel';
-                adminDiv.innerHTML = `<div class="admin-title">🔧 Админ-панель</div>
-                    <button id="createPromoBtn" class="admin-btn" style="background:#2196F3;">🎫 Создать промокод</button>
-                    <button id="listPromoBtn" class="admin-btn" style="background:#9C27B0;">📋 Список кодов</button>
-                    <button id="resetPremiumBtn" class="admin-btn" style="background:#f44336;">🔄 Сбросить премиум</button>
-                    <div style="font-size: 10px; margin-top: 5px;">⚡ Для тестирования: создавайте промокоды для друзей</div>`;
+                adminDiv.innerHTML = `
+                    <div class="admin-title">🔧 Админ-панель (создание промокодов)</div>
+                    <div class="admin-buttons">
+                        <button id="createDayPromoBtn" class="admin-btn" style="background:#4CAF50;">📅 На 1 день</button>
+                        <button id="createWeekPromoBtn" class="admin-btn" style="background:#2196F3;">📆 На 7 дней</button>
+                        <button id="createMonthPromoBtn" class="admin-btn" style="background:#9C27B0;">💎 На 30 дней</button>
+                        <button id="listPromoBtn" class="admin-btn" style="background:#ff9800;">📋 Список кодов</button>
+                        <button id="resetPremiumBtn" class="admin-btn danger">🔄 Сбросить премиум</button>
+                    </div>
+                    <div style="font-size: 10px; margin-top: 8px; color: #aaa;">⚡ Промокоды одноразовые. После активации дают премиум на указанный срок.</div>
+                `;
                 premiumContent.parentNode.insertBefore(adminDiv, premiumContent.nextSibling);
-                document.getElementById('createPromoBtn')?.addEventListener('click', createNewPromoCode);
+                
+                document.getElementById('createDayPromoBtn')?.addEventListener('click', () => createPromoCode(1, 'На 1 день'));
+                document.getElementById('createWeekPromoBtn')?.addEventListener('click', () => createPromoCode(7, 'На 7 дней'));
+                document.getElementById('createMonthPromoBtn')?.addEventListener('click', () => createPromoCode(30, 'На 30 дней'));
                 document.getElementById('listPromoBtn')?.addEventListener('click', showPromoCodes);
                 document.getElementById('resetPremiumBtn')?.addEventListener('click', () => {
                     localStorage.removeItem(STORAGE_KEYS.PREMIUM_EXPIRES);
                     updatePremiumUI();
-                    if (tg) tg.showPopup({ title: '🔄 Сброшено', message: 'Премиум удален (для тестирования)', buttons: [{ type: 'ok' }] });
+                    showMessage('🔄 Сброшено', 'Премиум удален (для тестирования)');
                 });
             } else if (!isAdmin() && existingAdmin) {
                 existingAdmin.remove();
@@ -710,8 +807,8 @@
         // ==================================================
         if (tg) {
             tg.onEvent('invoiceClosed', (data) => {
-                if (data.status === 'paid') activatePremium();
-                else if (data.status === 'failed' && tg) tg.showPopup({ title: '❌ Ошибка', message: 'Платеж не прошёл.', buttons: [{ type: 'ok' }] });
+                if (data.status === 'paid') activatePremium(30);
+                else if (data.status === 'failed') showMessage('❌ Ошибка', 'Платеж не прошёл. Попробуйте позже.');
             });
         }
         
@@ -723,18 +820,49 @@
             if (savedLang && translations[savedLang]) currentLang = savedLang;
             updateUILanguage();
             updatePremiumUI();
+            
             document.getElementById("generateBtn").addEventListener("click", updateNickname);
             document.getElementById("copyBtn").addEventListener("click", copyToClipboard);
             document.getElementById("bulkGenerateBtn")?.addEventListener("click", bulkGenerate);
-            document.getElementById("activatePromoBtn")?.addEventListener("click", () => {
-                const input = document.getElementById("promoCodeInput");
-                if (input?.value) activatePromoCode(input.value.trim().toUpperCase());
-                else if (tg) tg.showPopup({ title: '⚠️ Ошибка', message: 'Введите промокод!', buttons: [{ type: 'ok' }] });
-            });
+            
+            // ИСПРАВЛЕННЫЙ ОБРАБОТЧИК ПРОМОКОДА
+            const activateBtn = document.getElementById('activatePromoBtn');
+            const promoInput = document.getElementById('promoCodeInput');
+            
+            if (activateBtn) {
+                activateBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const code = promoInput ? promoInput.value : '';
+                    if (code && code.trim()) {
+                        activatePromoCode(code);
+                        if (promoInput) promoInput.value = '';
+                    } else {
+                        showMessage('⚠️ Ошибка', 'Введите промокод!');
+                    }
+                });
+            }
+            
+            if (promoInput) {
+                promoInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const code = promoInput.value;
+                        if (code && code.trim()) {
+                            activatePromoCode(code);
+                            promoInput.value = '';
+                        } else {
+                            showMessage('⚠️ Ошибка', 'Введите промокод!');
+                        }
+                    }
+                });
+            }
+            
             document.querySelectorAll(".lang-btn").forEach(btn => {
                 btn.addEventListener("click", () => setLanguage(btn.getAttribute("data-lang")));
             });
+            
             updateNickname();
+            
             setInterval(() => {
                 if (hasPremium() && localStorage.getItem(STORAGE_KEYS.PREMIUM_EXPIRES) < Date.now()) {
                     localStorage.removeItem(STORAGE_KEYS.PREMIUM_EXPIRES);
@@ -742,6 +870,10 @@
                     location.reload();
                 }
             }, 60000);
+            
+            console.log('✅ Генератор запущен!');
+            console.log('Админ ID:', ADMIN_IDS[0]);
+            console.log('Ваш ID:', tg?.initDataUnsafe?.user?.id);
         });
     </script>
 </body>
